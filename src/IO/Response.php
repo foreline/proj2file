@@ -11,7 +11,7 @@ use Stringable;
 /**
  *
  */
-class Message
+class Response
 {
     private static array $advices = [];
     private static bool $debug = true;
@@ -195,9 +195,9 @@ class Message
      */
     public static function request(string $question, array $options = ['y', 'yes', 'Y', 'Yes'], string $defaultValue = 'no'): bool
     {
-        Message::info($question, false);
-        Message::advice(' options: [' . implode(', ', $options) . '] ', false);
-        Message::warn('default: [' . $defaultValue . ']');
+        Response::info($question, false);
+        Response::advice(' options: [' . implode(', ', $options) . '] ', false);
+        Response::warn('default: [' . $defaultValue . ']');
         
         $handle = fopen('php://stdin', 'rb');
         

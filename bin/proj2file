@@ -5,7 +5,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Foreline\IO\Message;
+use Foreline\IO\Response;
 use Foreline\Proj2File\Command\RunCommand;
 use Foreline\Proj2File\ProjectPacker;
 use Symfony\Component\Console\Application;
@@ -15,5 +15,5 @@ $application->add(new RunCommand(new ProjectPacker()));
 try {
     $application->run();
 } catch (Exception $e) {
-    Message::exception($e);
+    Response::exception($e);
 }

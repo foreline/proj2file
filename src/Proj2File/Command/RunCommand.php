@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Foreline\Proj2File\Command;
 
 use Exception;
-use Foreline\IO\Message;
+use Foreline\IO\Response;
 use Foreline\Proj2File\ProjectPacker;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -48,17 +48,17 @@ class RunCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            Message::info('Proj2file');
+            Response::info('Proj2file');
             
             $outputFile = $this->projectPacker->pack();
             
-            Message::info("Project packed successfully!");
-            Message::info("Output file: {$outputFile}");
+            Response::info("Project packed successfully!");
+            Response::info("Output file: {$outputFile}");
             
             return Command::SUCCESS;
             
         } catch (Exception $e) {
-            Message::exception($e);
+            Response::exception($e);
             return Command::FAILURE;
         }
     }

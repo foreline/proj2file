@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Foreline\Proj2File;
 
-use Foreline\IO\Message;
+use Foreline\IO\Response;
 use Symfony\Component\Finder\Finder;
 use Webmozart\Assert\Assert;
 
@@ -24,7 +24,7 @@ class ProjectPacker
             $path = getcwd();
         }
         
-        Message::info('Working directory: ' . $path);
+        Response::info('Working directory: ' . $path);
         
         $this->ensureOutputDirectoryExists();
     
@@ -48,13 +48,16 @@ class ProjectPacker
      */
     private function createFinder(bool $includeDirectories = false): Finder
     {
-        Message::info('Current directory: "' . getcwd() . '"');
+        Response::info('Current directory: "' . getcwd() . '"');
         
         $finder = Finder::create()
             ->in(getcwd())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
-            ->notName(['*.lock'])
+            ->notName([
+                '*.lock',
+                '*.ico', '*.svg', '*.png', '*.jpg', '*.jpeg'
+            ])
         ;
         
         if ( !$includeDirectories ) {
