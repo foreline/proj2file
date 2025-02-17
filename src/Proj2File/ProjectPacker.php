@@ -13,6 +13,40 @@ use Webmozart\Assert\Assert;
 class ProjectPacker
 {
     private const OUTPUT_DIR = '.proj2file';
+    private bool $includeLineNumbers = false;
+    private string $numberFormat = '4d';
+    
+    /**
+     * @return bool
+     */
+    public function isIncludeLineNumbers(): bool
+    {
+        return $this->includeLineNumbers;
+    }
+    
+    /**
+     * @param bool $includeLineNumbers
+     */
+    public function setIncludeLineNumbers(bool $includeLineNumbers): void
+    {
+        $this->includeLineNumbers = $includeLineNumbers;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getNumberFormat(): string
+    {
+        return $this->numberFormat;
+    }
+    
+    /**
+     * @param string $numberFormat
+     */
+    public function setNumberFormat(string $numberFormat): void
+    {
+        $this->numberFormat = $numberFormat;
+    }
     
     /**
      * @param string $path
@@ -55,7 +89,7 @@ class ProjectPacker
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
             ->notName([
-                '*.lock',
+                '*.lock', 'package-lock.json',
                 '*.ico', '*.svg', '*.png', '*.jpg', '*.jpeg'
             ])
         ;
@@ -73,7 +107,6 @@ class ProjectPacker
      */
     public function getFileStructure(string $path = ''): string
     {
-        
         $output = 'Project Structure:' . PHP_EOL;
         $output .= '```' . PHP_EOL;
         //$output .= '=================' . PHP_EOL;
@@ -86,6 +119,7 @@ class ProjectPacker
             
             // Calculate indentation level
             $parts = explode(DIRECTORY_SEPARATOR, $relativePath);
+            
             $level = count($parts) - 1;
             
             // Print directory structure with colors
@@ -98,7 +132,6 @@ class ProjectPacker
             }
         }
         
-        //$output .= '=================' . PHP_EOL;
         $output .= "Total files found: " . iterator_count($finder) . PHP_EOL;
         $output .= '```' . PHP_EOL;
     
@@ -122,11 +155,28 @@ class ProjectPacker
         } else {
             $extension = '';
         }
+    
+        // Split content into lines
+        $lines = explode("\n", $escapedContent);
+    
+        // Format with line numbers if requested
+        if ( $this->isIncludeLineNumbers() ) {
+            $formattedLines = [];
+        
+            foreach ($lines as $lineNumber => $line) {
+                //$formattedLines[] = $this->formatLineNumber($lineNumber + 1) . '. ' . $line;
+                $formattedLines[] = $this->formatLineNumber($lineNumber + 1) . ' | ' . $line;
+            }
+        
+            $contentBlock = implode("\n", $formattedLines);
+        } else {
+            $contentBlock = implode("\n", $lines);
+        }
         
         return <<<EOT
 {$path}
 ```{$extension}
-{$escapedContent}
+{$contentBlock}
 ```
 
 EOT;
@@ -159,5 +209,27 @@ EOT;
         file_put_contents($filePath, implode("\n", $content));
         
         return $filePath;
+    }
+    
+    /**
+     * @param int $number
+     * @return string
+     */
+    private function formatLineNumber(int $number): string
+    {
+        $format = $this->getNumberFormat();
+        
+        if ( str_contains($format, ':') ) {
+            [$align, $width] = explode(':', $format);
+            $width = (int)$width;
+    
+            return match ( $align ) {
+                'left' => str_pad((string) $number, $width, ' ', STR_PAD_RIGHT),
+                'center' => str_pad((string) $number, $width, ' ', STR_PAD_BOTH),
+                default => str_pad((string) $number, $width, ' ', STR_PAD_LEFT),
+            };
+        }
+        
+        return sprintf('%' . $format, $number);
     }
 }

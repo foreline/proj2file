@@ -9,6 +9,7 @@ use Foreline\IO\Response;
 use Foreline\Proj2File\ProjectPacker;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -37,7 +38,10 @@ class RunCommand extends Command
         $this
             ->setName(self::$defaultName)
             ->setDescription('Pack project files into a single file')
-            ->setHelp('This command packs all project files (excluding .gitignore file rules) into a single file in .proj2file directory.');
+            ->setHelp('This command packs all project files (excluding .gitignore file rules) into a single file in .proj2file directory.')
+            ->addOption('line-numbers', 'l', null, 'Include line numbers in file contents')
+            ->addOption('number-format', 'f', InputOption::VALUE_OPTIONAL, 'Format for line numbers (e.g., "4d", "03d", "left:4")', '4d')
+        ;
     }
     
     /**
@@ -49,6 +53,9 @@ class RunCommand extends Command
     {
         try {
             Response::info('Proj2file');
+            
+            $this->projectPacker->setIncludeLineNumbers((bool)$input->getOption('line-numbers'));
+            $this->projectPacker->setNumberFormat((string)$input->getOption('number-format'));
             
             $outputFile = $this->projectPacker->pack();
             
