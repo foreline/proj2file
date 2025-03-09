@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Foreline\Proj2File;
 
 use Foreline\IO\Response;
+use InvalidArgumentException;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 use Webmozart\Assert\Assert;
 
@@ -13,8 +15,45 @@ use Webmozart\Assert\Assert;
 class ProjectPacker
 {
     private const OUTPUT_DIR = '.proj2file';
+    private string $path;
     private bool $includeLineNumbers = false;
     private string $numberFormat = '4d';
+    
+    /*public function __construct(string $path = '')
+    {
+        $this->setPath($path);
+    }*/
+    
+    /**
+     * @param string $path
+     * @return void
+     */
+    public function setPath(string $path): void
+    {
+        $path = Path::normalize($path);
+        
+        if (
+            str_starts_with($path, './')
+            || str_starts_with($path, '../')
+        ) {
+            $path = getcwd() . '/' . $path;
+        }
+    
+        $absolutePath = Path::canonicalize($path);
+        
+        if ( !is_dir($absolutePath) ) {
+            throw new InvalidArgumentException("The path '$absolutePath' is not a valid directory");
+        }
+        $this->path = $absolutePath;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getPath(): string
+    {
+        return $this->path;
+    }
     
     /**
      * @return bool
@@ -49,16 +88,11 @@ class ProjectPacker
     }
     
     /**
-     * @param string $path
      * @return string
      */
-    public function pack(string $path = ''): string
+    public function pack(): string
     {
-        if ( empty($path) ) {
-            $path = getcwd();
-        }
-        
-        Response::info('Working directory: ' . $path);
+        Response::info('Working directory: ' . $this->getPath());
         
         $this->ensureOutputDirectoryExists();
     
@@ -69,7 +103,7 @@ class ProjectPacker
         $content[] = $this->getFileStructure();
         
         foreach ( $finder as $file) {
-            $relativePath = substr($file->getPathname(), strlen(getcwd()) + 1);
+            $relativePath = substr($file->getPathname(), strlen($this->getPath()) + 1);
             $content[] = $this->formatFileEntry($relativePath, $file->getContents());
         }
         
@@ -82,10 +116,10 @@ class ProjectPacker
      */
     private function createFinder(bool $includeDirectories = false): Finder
     {
-        Response::info('Current directory: "' . getcwd() . '"');
+        Response::info('Current directory: "' . $this->getPath() . '"');
         
         $finder = Finder::create()
-            ->in(getcwd())
+            ->in($this->getPath())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
             ->notName([
@@ -102,10 +136,9 @@ class ProjectPacker
     }
     
     /**
-     * @param string $path
      * @return string
      */
-    public function getFileStructure(string $path = ''): string
+    public function getFileStructure(): string
     {
         $output = 'Project Structure:' . PHP_EOL;
         $output .= '```' . PHP_EOL;
@@ -115,7 +148,7 @@ class ProjectPacker
         
         foreach ( $finder as $file ) {
             
-            $relativePath = substr($file->getPathname(), strlen(getcwd()) + 1);
+            $relativePath = substr($file->getPathname(), strlen($this->getPath()) + 1);
             
             // Calculate indentation level
             $parts = explode(DIRECTORY_SEPARATOR, $relativePath);

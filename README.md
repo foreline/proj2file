@@ -13,10 +13,19 @@ composer require-dev foreline/proj2file
 
 ## Usage
 
+Packs project from current working directory to default output directory `./.proj2file`.
 ```shell
-# Run with default options
+# Run with default options.
 php bin/proj2file run
+```
 
+Packs specific directory only:
+```shell
+php bin/proj2file run ./path/to/dir
+```
+
+### Formatting
+```shell
 # Default format (4 digits, right-aligned)
 php bin/proj2file run -l
 
@@ -30,9 +39,10 @@ php bin/proj2file run -l --number-format "03d"
 php bin/proj2file run -l --number-format "center:5"
 ```
 
-## Format options:
+#### Format options:
 
 * `4d` - Default: right-aligned 4-digit numbers (e.g., " 1", " 12", " 123")
 * `03d` - Zero-padded 3-digit numbers (e.g., "001", "012", "123")
 * `left:4` - Left-aligned numbers with width 4 (e.g., "1 ", "12 ", "123 ")
 * `center:5` - Centered numbers with width 5 (e.g., " 1 ", " 12 ", " 123")
+
