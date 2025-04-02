@@ -11,16 +11,18 @@
   "minimum-stability": "dev",
   "require": {
     "php": ">8.0",
-    "symfony/config": "*",
     "symfony/console": "*",
     "symfony/finder": "*",
     "symfony/filesystem": "*",
+    "symfony/yaml": "7.3.x-dev",
+    "symfony/config": "7.3.x-dev",
     "kevinlebrun/colors.php": "^1",
     "webmozart/assert": "^1.11",
     "ext-mbstring": "*"
   },
   "require-dev": {
-    "symfony/var-dumper": "*"
+    "symfony/var-dumper": "*",
+    "phpstan/phpstan": "2.1.x-dev"
   },
   "autoload": {
     "psr-4": {

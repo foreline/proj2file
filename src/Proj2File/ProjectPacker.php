@@ -3,30 +3,94 @@ declare(strict_types=1);
 
 namespace Foreline\Proj2File;
 
+use Exception;
 use Foreline\IO\Response;
 use InvalidArgumentException;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Yaml\Yaml;
 use Webmozart\Assert\Assert;
 
 /**
- *
+ * This class is responsible for packing a project directory into a markdown file.
+ * It includes methods to set the path, include line numbers, and format the output.
  */
 class ProjectPacker
 {
-    private const OUTPUT_DIR = '.proj2file';
+    private const OUTPUT_DIR  = '.proj2file';
+    private const CONFIG_DIR  = self::OUTPUT_DIR . '/config';
+    private const CONFIG_FILE = self::CONFIG_DIR . '/config.yml';
+    
     private string $path;
     private bool $includeLineNumbers = false;
     private string $numberFormat = '4d';
     
-    /*public function __construct(string $path = '')
-    {
-        $this->setPath($path);
-    }*/
+    private array $exclusions = [
+        'files' => [],
+        'directories' => []
+    ];
     
     /**
-     * @param string $path
+     *
+     */
+    public function __construct(/*string $path = ''*/)
+    {
+        //$this->setPath($path);
+        $this->loadExclusions();
+    }
+    
+    private function loadExclusions(): void
+    {
+        $configDir = Path::canonicalize(getcwd() . '/' . self::CONFIG_DIR);
+        
+        if ( !is_dir($configDir) ) {
+            mkdir($configDir, 0755, true);
+            return;
+        }
+        
+        $configFile = getcwd() . '/' . self::CONFIG_FILE;
+        
+        if ( !file_exists($configFile) ) {
+            file_put_contents(
+                $configFile,
+                <<<YAML
+# Exclusion patterns configuration
+exclusions:
+  files:
+    - "*.log"
+    - "*.tmp"
+    - "*.bak"
+  directories:
+    - "node_modules"
+    - "vendor"
+    - ".git"
+YAML
+            );
+            return;
+        }
+        
+        try {
+            $config = Yaml::parseFile($configFile);
+            
+            $this->exclusions = array_merge([
+                'files' => [],
+                'directories' => []
+            ], $config['exclusions']);
+        } catch (Exception $e) {
+            Response::warn(sprintf(
+                'Failed to load exclusions from %s: %s',
+                $configFile,
+                $e->getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Sets the path to the project directory.
+     *
+     * @param string $path The path to the project directory.
      * @return void
+     * @throws InvalidArgumentException if the path is not a valid directory.
      */
     public function setPath(string $path): void
     {
@@ -48,7 +112,9 @@ class ProjectPacker
     }
     
     /**
-     * @return string
+     * Gets the path to the project directory.
+     *
+     * @return string The path to the project directory.
      */
     public function getPath(): string
     {
@@ -122,11 +188,24 @@ class ProjectPacker
             ->in($this->getPath())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
-            ->notName([
+            /*->notName([
                 '*.lock', 'package-lock.json',
                 '*.ico', '*.svg', '*.png', '*.jpg', '*.jpeg'
-            ])
+            ])*/
         ;
+        
+        /** ******/
+        foreach ( $this->exclusions['directories'] as $dir ) {
+            $finder->exclude([$dir]);
+        }
+    
+        $filenamePatterns = array_merge(
+            $this->exclusions['files'],
+            ['*.lock', 'package-lock.json', '*.ico', '*.svg', '*.png', '*.jpg', '*.jpeg']
+        );
+    
+        $finder->notName($filenamePatterns);
+        /** *****/
         
         if ( !$includeDirectories ) {
             $finder->files();
@@ -142,7 +221,6 @@ class ProjectPacker
     {
         $output = 'Project Structure:' . PHP_EOL;
         $output .= '```' . PHP_EOL;
-        //$output .= '=================' . PHP_EOL;
         
         $finder = $this->createFinder(true);
         
@@ -165,6 +243,7 @@ class ProjectPacker
             }
         }
         
+        $output .= PHP_EOL;
         $output .= "Total files found: " . iterator_count($finder) . PHP_EOL;
         $output .= '```' . PHP_EOL;
     
