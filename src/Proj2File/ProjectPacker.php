@@ -32,6 +32,7 @@ class ProjectPacker
     
     private int $projectSize = 0;
     private int $projectLines = 0;
+    private int $tokensCount = 0;
     
     /**
      *
@@ -320,6 +321,8 @@ EOT;
             return $carry + substr_count($item, "\n");
         }, 0) + count($content);
         
+        $this->tokensCount = TokenCounter::getCount(implode("\n", $content));
+        
         file_put_contents($filePath, implode("\n", $content));
         
         $this->projectSize = filesize($filePath);
@@ -365,6 +368,14 @@ EOT;
     public function getSize(): int
     {
         return $this->projectSize;
+    }
+    
+    /**
+     * @return int
+     */
+    public function getTokensCount(): int
+    {
+        return $this->tokensCount;
     }
     
 }

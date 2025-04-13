@@ -76,6 +76,7 @@ class RunCommand extends Command
             Response::info("Output file: {$outputFile}");
             Response::info("Lines in file: {$this->projectPacker->getLinesCount()}");
             Response::info("File size: " . ( number_format($this->projectPacker->getSize()/1024 , 1) ) . " Kb");
+            Response::info("Tokens count: " . $this->projectPacker->getTokensCount() . " tokens");
             
             return Command::SUCCESS;
             
