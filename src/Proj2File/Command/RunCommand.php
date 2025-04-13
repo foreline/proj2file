@@ -7,7 +7,6 @@ namespace Foreline\Proj2File\Command;
 use Exception;
 use Foreline\IO\Response;
 use Foreline\Proj2File\ProjectPacker;
-use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -75,6 +74,8 @@ class RunCommand extends Command
             
             Response::info("Project packed successfully!");
             Response::info("Output file: {$outputFile}");
+            Response::info("Lines in file: {$this->projectPacker->getLinesCount()}");
+            Response::info("File size: " . ( number_format($this->projectPacker->getSize()/1024 , 1) ) . " Kb");
             
             return Command::SUCCESS;
             

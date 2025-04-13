@@ -30,6 +30,9 @@ class ProjectPacker
         'directories' => []
     ];
     
+    private int $projectSize = 0;
+    private int $projectLines = 0;
+    
     /**
      *
      */
@@ -188,13 +191,8 @@ YAML
             ->in($this->getPath())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
-            /*->notName([
-                '*.lock', 'package-lock.json',
-                '*.ico', '*.svg', '*.png', '*.jpg', '*.jpeg'
-            ])*/
         ;
         
-        /** ******/
         foreach ( $this->exclusions['directories'] as $dir ) {
             $finder->exclude([$dir]);
         }
@@ -205,7 +203,6 @@ YAML
         );
     
         $finder->notName($filenamePatterns);
-        /** *****/
         
         if ( !$includeDirectories ) {
             $finder->files();
@@ -318,7 +315,14 @@ EOT;
         
         $filePath = sprintf('%s/%s.md', $outputDir, $fileName);
         
+        // count line breaks in $content array of strings
+        $this->projectLines = array_reduce($content, function ($carry, $item) {
+            return $carry + substr_count($item, "\n");
+        }, 0) + count($content);
+        
         file_put_contents($filePath, implode("\n", $content));
+        
+        $this->projectSize = filesize($filePath);
         
         return $filePath;
     }
@@ -344,4 +348,23 @@ EOT;
         
         return sprintf('%' . $format, $number);
     }
+    
+    /**
+     * Returns the number of lines in the packed file
+     * @return int
+     */
+    public function getLinesCount(): int
+    {
+        return $this->projectLines;
+    }
+    
+    /**
+     * Returns final file size
+     * @return int
+     */
+    public function getSize(): int
+    {
+        return $this->projectSize;
+    }
+    
 }
