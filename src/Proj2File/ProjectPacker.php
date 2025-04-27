@@ -61,9 +61,16 @@ class ProjectPacker
 # Exclusion patterns configuration
 exclusions:
   files:
+    - ".gitignore"
+    - ".dockerignore"
     - "*.log"
     - "*.tmp"
     - "*.bak"
+    - "*.swp"
+    - "*.DS_Store"
+    - "*.zip"
+    - "*.tar.gz"
+    - "*.tar"
   directories:
     - "node_modules"
     - "vendor"
@@ -192,6 +199,7 @@ YAML
             ->in($this->getPath())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
+            ->ignoreDotFiles(false)
         ;
         
         foreach ( $this->exclusions['directories'] as $dir ) {
