@@ -112,18 +112,20 @@ class Response
     
     /**
      * @param Exception $e
-     * @return void
+     * @param int $returnCode
+     * @return mixed
      */
-    #[NoReturn]
-    public static function exception(Exception $e): void
+    public static function exception(Exception $e, int $returnCode = 1): int
     {
         self::error($e->getMessage());
+        
         if ( self::$debug ) {
             self::showTrace($e);
         } else {
             self::advice('use --debug option for trace');
         }
-        //exit(1);
+        
+        return $returnCode;
     }
     
     /**
