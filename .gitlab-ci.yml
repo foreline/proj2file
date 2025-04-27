@@ -1,0 +1,46 @@
+image: php8.2
+
+stages:
+  - build
+  - lint
+
+job-composer:
+  stage: build
+  before_script:
+    - echo "Setting up Composer"
+  script:
+    - apt-get update -yq && apt-get install -y unzip git libzip-dev
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer config cache-files-dir $COMPOSER_CACHE_DIR
+    - composer install --prefer-dist --no-progress --no-suggest
+  artifacts:
+    untracked: true
+    paths:
+      - vendor/
+      - composer.lock
+
+
+job-syntax-check:
+  stage: lint
+  before_script:
+    - echo "Running PHP syntax check"
+  script:
+    - find . -name "*.php" -exec php -l {} \;
+  allow_failure: false
+  dependencies:
+    - job-composer
+
+
+job-phpstan-check:
+  stage: lint
+  before_script:
+    - echo "Running PHPStan"
+  script:
+    - vendor/bin/phpstan analyse --no-progress --error-format gitlab > phpstan.json
+  artifacts:
+    reports:
+      codequality: phpstan.json
+  when: always
+  allow_failure: false
+  dependencies:
+    - job-composer
