@@ -73,7 +73,7 @@ class RunCommand extends Command
             $outputFile = $this->projectPacker->pack();
             
             Response::info("Project packed successfully!");
-            Response::info("Output file: {$outputFile}");
+            Response::info("Output file: $outputFile");
             Response::info("Lines in file: {$this->projectPacker->getLinesCount()}");
             Response::info("File size: " . ( number_format($this->projectPacker->getSize()/1024 , 1) ) . " Kb");
             Response::info("Tokens count: " . $this->projectPacker->getTokensCount() . " tokens");
@@ -81,8 +81,7 @@ class RunCommand extends Command
             return Command::SUCCESS;
             
         } catch (Exception $e) {
-            Response::exception($e);
-            return Command::FAILURE;
+            return Response::exception($e, Command::FAILURE);
         }
     }
 }
