@@ -25,6 +25,7 @@ class ProjectPacker
     private bool $includeLineNumbers = false;
     private string $numberFormat = '4d';
     
+    /** @var array<string, string[]>  */
     private array $exclusions = [
         'files' => [],
         'directories' => []
@@ -292,9 +293,9 @@ YAML
         }
         
         return <<<EOT
-{$path}
-```{$extension}
-{$contentBlock}
+$path
+```$extension
+$contentBlock
 ```
 
 EOT;
@@ -313,14 +314,14 @@ EOT;
     }
     
     /**
-     * @param array $content
+     * @param string[] $content
      * @return string
      */
     private function writeOutputFile(array $content): string
     {
         $outputDir = getcwd() . '/' . self::OUTPUT_DIR;
         
-        $fileName = basename(getcwd()) . '_' . date('Y-m-d_H-i-s');
+        $fileName = basename(getcwd() ?: 'project') . '_' . date('Y-m-d_H-i-s');
         
         $filePath = sprintf('%s/%s.md', $outputDir, $fileName);
         
@@ -333,7 +334,7 @@ EOT;
         
         file_put_contents($filePath, implode("\n", $content));
         
-        $this->projectSize = filesize($filePath);
+        $this->projectSize = filesize($filePath) ?: 0;
         
         return $filePath;
     }
