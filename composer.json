@@ -31,5 +31,8 @@
   },
   "bin": [
     "proj2file"
-  ]
+  ],
+  "scripts": {
+    "phpstan": "vendor/bin/phpstan analyze -c phpstan.neon"
+  }
 }
