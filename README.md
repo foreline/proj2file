@@ -1,9 +1,15 @@
 # Proj2File
 
-PHP Console application used to pack all project files to one file. 
-The file contains project structure and project files content wrapping in triple backticks.
-The packed file is placed to `.proj2file` directory.
-Respects `.gitignore` file rules.
+A PHP console application designed to pack entire project into a single markdown file.
+
+* The packed file is placed to `.proj2file` directory.
+* The file contains project structure and project files content wrapping in triple backticks.
+* Respects `.gitignore` file rules.
+* Generates detailed statistics about the packed project including the number of lines of code and tokens.
+
+The tool is particularly useful for:
+* Asking AI for help with specific project related tasks.
+* Creating project snapshots.
 
 ## Installation
 

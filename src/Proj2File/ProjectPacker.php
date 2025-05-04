@@ -197,6 +197,8 @@ YAML
         Response::info('Current directory: "' . $this->getPath() . '"');
         
         $finder = Finder::create()
+            //->sortByType() // directories first
+            //->sortByName()
             ->in($this->getPath())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)

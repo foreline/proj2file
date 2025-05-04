@@ -3,7 +3,9 @@ image: php:8.2
 stages:
   - build
   - lint
+  - deploy
 
+# Install dependencies
 job-composer:
   stage: build
   before_script:
@@ -19,7 +21,7 @@ job-composer:
       - vendor/
       - composer.lock
 
-
+# Run php syntax check
 job-syntax-check:
   stage: lint
   before_script:
@@ -30,7 +32,7 @@ job-syntax-check:
   dependencies:
     - job-composer
 
-
+# Run phpstan check
 job-phpstan-check:
   stage: lint
   before_script:

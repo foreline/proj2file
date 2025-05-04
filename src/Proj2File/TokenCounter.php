@@ -9,26 +9,26 @@ namespace Foreline\Proj2File;
 class TokenCounter
 {
     /**
-     * Internal method to tokenize text
+     * Internal method to tokenize text.
+     * Implementation simulates OpenAI's tokenization behavior.
+     * Based on official documentation and tiktoken behavior
      *
      * @param string $text The text to tokenize
      * @return int Number of tokens
      */
     public static function getCount(string $text): int {
-        // Implementation simulates OpenAI's tokenization behavior
-        // Based on official documentation and tiktoken behavior
         $tokens = [];
         $currentToken = '';
         
-        foreach (mb_str_split($text) as $char) {
-            if (preg_match('/[\p{L}\p{N}_]/u', $char)) {
+        foreach ( mb_str_split($text) as $char ) {
+            if ( preg_match('/[\p{L}\p{N}_]/u', $char) ) {
                 $currentToken .= $char;
-            } elseif ($currentToken !== '') {
+            } elseif ( $currentToken !== '' ) {
                 $tokens[] = $currentToken;
                 $currentToken = '';
             }
             
-            if (in_array($char, [' ', "\t", "\n", "\r"])) {
+            if ( in_array($char, [' ', "\t", "\n", "\r"]) ) {
                 if ($currentToken !== '') {
                     $tokens[] = $currentToken;
                     $currentToken = '';
@@ -37,7 +37,7 @@ class TokenCounter
             }
         }
         
-        if ($currentToken !== '') {
+        if ( '' !== $currentToken ) {
             $tokens[] = $currentToken;
         }
         
