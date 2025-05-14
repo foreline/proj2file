@@ -324,8 +324,10 @@ EOT;
         $outputDir = getcwd() . '/' . self::OUTPUT_DIR;
         
         $fileName = basename(getcwd() ?: 'project') . '_' . date('Y-m-d_H-i-s');
+        $latestFileName = basename(getcwd() ?: 'project') . '-latest';
         
         $filePath = sprintf('%s/%s.md', $outputDir, $fileName);
+        $latestFilePath = sprintf('%s/%s.md', $outputDir, $latestFileName);
         
         // count line breaks in $content array of strings
         $this->projectLines = array_reduce($content, function ($carry, $item) {
@@ -335,6 +337,7 @@ EOT;
         $this->tokensCount = TokenCounter::getCount(implode("\n", $content));
         
         file_put_contents($filePath, implode("\n", $content));
+        file_put_contents($latestFilePath, implode("\n", $content));
         
         $this->projectSize = filesize($filePath) ?: 0;
         
