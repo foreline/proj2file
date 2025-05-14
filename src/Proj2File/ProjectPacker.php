@@ -189,6 +189,7 @@ YAML
     }
     
     /**
+     * Creates a Finder instance to search for files in the project directory.
      * @param bool $includeDirectories
      * @return Finder
      */
@@ -197,8 +198,6 @@ YAML
         Response::info('Current directory: "' . $this->getPath() . '"');
         
         $finder = Finder::create()
-            //->sortByType() // directories first
-            //->sortByName()
             ->in($this->getPath())
             ->ignoreVCS(true)
             ->ignoreVCSIgnored(true)
@@ -224,6 +223,7 @@ YAML
     }
     
     /**
+     * Returns the file structure of the project as a string.
      * @return string
      */
     public function getFileStructure(): string
@@ -232,30 +232,103 @@ YAML
         $output .= '```' . PHP_EOL;
         
         $finder = $this->createFinder(true);
+        $rootPath = $this->getPath();
+        
+        $filesCount = 0;
+        
+        // Build a proper tree structure
+        $tree = [];
         
         foreach ( $finder as $file ) {
+            $relativePath = substr($file->getPathname(), strlen($rootPath) + 1);
+            $isDir = $file->isDir();
+            $pathParts = explode(DIRECTORY_SEPARATOR, $relativePath);
             
-            $relativePath = substr($file->getPathname(), strlen($this->getPath()) + 1);
+            // Build the tree
+            $current = &$tree;
             
-            // Calculate indentation level
-            $parts = explode(DIRECTORY_SEPARATOR, $relativePath);
-            
-            $level = count($parts) - 1;
-            
-            // Print directory structure with colors
-            if ( 0 === $level ) {
-                $output .= $parts[0] . PHP_EOL;
-            } elseif ( 1 === $level ) {
-                $output .= "├── {$parts[count($parts) - 1]}" . PHP_EOL;
-            } else {
-                $output .= str_repeat('│   ', $level - 1) . "└── {$parts[count($parts) - 1]}" . PHP_EOL;
+            for ( $i = 0; $i < count($pathParts); $i++ ) {
+                $part = $pathParts[$i];
+                $isLastPart = ($i === count($pathParts) - 1);
+                
+                // If it's a file (last part and not a directory)
+                if ( $isLastPart && !$isDir ) {
+                    if (!isset($current['files'])) {
+                        $current['files'] = [];
+                    }
+                    $current['files'][] = $part;
+                } else { // It's a directory
+                    if ( !isset($current['dirs']) ) {
+                        $current['dirs'] = [];
+                    }
+                    if ( !isset($current['dirs'][$part]) ) {
+                        $current['dirs'][$part] = [];
+                    }
+                    $current = &$current['dirs'][$part];
+                }
             }
         }
         
+        // Function to print the tree
+        $printTree = function($tree, $prefix = '', $isRoot = true) use (&$printTree, &$output, &$filesCount) {
+            // Process directories first
+            if ( isset($tree['dirs']) ) {
+                ksort($tree['dirs']);
+                $dirs = array_keys($tree['dirs']);
+                $numDirs = count($dirs);
+                
+                for ( $i = 0; $i < $numDirs; $i++ ) {
+                    $dir = $dirs[$i];
+                    $lastDir = ($i === $numDirs - 1);
+                    $hasFiles = isset($tree['files']) && !empty($tree['files']);
+                    $isLast = $lastDir && !$hasFiles;
+                    //$isLastDir = $lastDir;
+                    
+                    if ( $isRoot ) {
+                        $prefix = $isLast ? '└── ' : '├── ';
+                        $output .= $prefix . $dir . PHP_EOL;
+                        $connector = $isLast ? '    ' : '│   ';
+                        $printTree($tree['dirs'][$dir], $connector, false);
+                    } else {
+                        $connector = $isLast ? '└── ' : '├── ';
+                        $output .= $prefix . $connector . $dir . PHP_EOL;
+                        
+                        $newPrefix = $prefix . ($isLast ? '    ' : '│   ');
+                        $printTree($tree['dirs'][$dir], $newPrefix, false);
+                    }
+                }
+            }
+            
+            // Then process files
+            if ( isset($tree['files']) ) {
+                sort($tree['files']);
+                $numFiles = count($tree['files']);
+                
+                $filesCount += $numFiles;
+                
+                for ( $i = 0; $i < $numFiles; $i++ ) {
+                    $file = $tree['files'][$i];
+                    $lastFile = ($i === $numFiles - 1);
+                    $isLastFile = $lastFile;
+                    
+                    if ( $isRoot ) {
+                        $prefix = $isLastFile ? '└── ' : '├── ';
+                        $output .= $prefix . $file . PHP_EOL;
+                    } else {
+                        $connector = $lastFile ? '└── ' : '├── ';
+                        $output .= $prefix . $connector . $file . PHP_EOL;
+                    }
+                }
+            }
+        };
+        
+        // Print the tree
+        $printTree($tree);
+        
         $output .= PHP_EOL;
-        $output .= "Total files found: " . iterator_count($finder) . PHP_EOL;
+        $output .= "Total files found: " . $filesCount . PHP_EOL;
         $output .= '```' . PHP_EOL;
-    
+        
         return $output;
     }
     
