@@ -44,19 +44,24 @@ class ProjectPacker
         $this->loadExclusions();
     }
     
+    /**
+     * @return void
+     */
     private function loadExclusions(): void
     {
         $configDir = Path::canonicalize(getcwd() . '/' . self::CONFIG_DIR);
         
         if ( !is_dir($configDir) ) {
-            mkdir($configDir, 0755, true);
-            return;
+            if ( !mkdir($configDir, 0755, true) ) {
+                dump('Failed to create config directory: ' . $configDir);
+                return;
+            }
         }
         
         $configFile = getcwd() . '/' . self::CONFIG_FILE;
         
         if ( !file_exists($configFile) ) {
-            file_put_contents(
+            $result = file_put_contents(
                 $configFile,
                 <<<YAML
 # Exclusion patterns configuration
@@ -78,6 +83,9 @@ exclusions:
     - ".git"
 YAML
             );
+            if ( !$result ) {
+                dump('Failed to create config file: ' . $configFile);
+            }
             return;
         }
         
@@ -88,7 +96,7 @@ YAML
                 'files' => [],
                 'directories' => []
             ], $config['exclusions']);
-        } catch (Exception $e) {
+        } catch ( Exception $e ) {
             Response::warn(sprintf(
                 'Failed to load exclusions from %s: %s',
                 $configFile,
@@ -212,7 +220,7 @@ YAML
             $this->exclusions['files'],
             ['*.lock', 'package-lock.json', '*.ico', '*.svg', '*.png', '*.jpg', '*.jpeg']
         );
-    
+        
         $finder->notName($filenamePatterns);
         
         if ( !$includeDirectories ) {
@@ -326,7 +334,7 @@ YAML
         $printTree($tree);
         
         $output .= PHP_EOL;
-        $output .= "Total files found: " . $filesCount . PHP_EOL;
+        $output .= "Total files: " . $filesCount . PHP_EOL;
         $output .= '```' . PHP_EOL;
         
         return $output;
