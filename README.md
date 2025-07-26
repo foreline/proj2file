@@ -47,8 +47,8 @@ php bin/proj2file run -l --number-format "center:5"
 
 #### Format options:
 
-* `4d` - Default: right-aligned 4-digit numbers (e.g., " 1", " 12", " 123")
+* `4d` - Default: right-aligned 4-digit numbers (e.g., "   1", "  12", " 123", "1234")
 * `03d` - Zero-padded 3-digit numbers (e.g., "001", "012", "123")
-* `left:4` - Left-aligned numbers with width 4 (e.g., "1 ", "12 ", "123 ")
-* `center:5` - Centered numbers with width 5 (e.g., " 1 ", " 12 ", " 123")
+* `left:4` - Left-aligned numbers with width 4 (e.g., "1   ", "12  ", "123 ", "1234")
+* `center:5` - Centered numbers with width 5 (e.g., "  1  ", " 12 ", " 123")
 
