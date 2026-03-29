@@ -27,6 +27,8 @@ class ProjectPacker
     private ?Redactor $redactor;
     private int $tailLines = 0;
     private bool $stripComments = false;
+    private bool $dedup = false;
+    private int $maxLineLength = 500;
     
     /** @var string[] */
     private array $commands = [];
@@ -232,6 +234,16 @@ YAML
     }
     
     /**
+     * @param bool $enabled Whether to deduplicate repeated lines and truncate long lines
+     * @param int $maxLineLength Maximum line length before truncation (0 = no truncation)
+     */
+    public function setDedup(bool $enabled, int $maxLineLength = 500): void
+    {
+        $this->dedup = $enabled;
+        $this->maxLineLength = $maxLineLength;
+    }
+    
+    /**
      * @return string
      */
     public function pack(): string
@@ -280,6 +292,9 @@ YAML
         foreach ($this->commands as $command) {
             $content[] = $this->captureCommand($command);
         }
+        
+        // Remove empty entries (files with no content after processing)
+        $content = array_filter($content, static fn(string $entry) => $entry !== '');
         
         return $this->writeOutputFile($content);
     }
@@ -446,6 +461,16 @@ YAML
         // Strip comments and blank lines if enabled
         if ($this->stripComments) {
             $content = $this->removeComments($content, $path);
+        }
+        
+        // Deduplicate repeated lines and truncate long lines if enabled
+        if ($this->dedup) {
+            $content = $this->deduplicateLines($content);
+        }
+        
+        // Skip empty files (or files that became empty after processing)
+        if (trim($content) === '') {
+            return '';
         }
         
         // Escape existing triple backticks
@@ -617,6 +642,11 @@ EOT;
             }
         }
         
+        // Deduplicate repeated lines and truncate long lines if enabled
+        if ($this->dedup) {
+            $result = $this->deduplicateLines($result);
+        }
+        
         $exitInfo = $exitCode !== 0 ? " (exit code: $exitCode)" : '';
         
         return <<<EOT
@@ -743,6 +773,49 @@ EOT;
         }
         
         return implode("\n", $filtered);
+    }
+    
+    /**
+     * Deduplicates consecutive repeated lines and truncates long lines.
+     *
+     * @param string $content Raw content
+     * @return string Deduplicated and truncated content
+     */
+    private function deduplicateLines(string $content): string
+    {
+        $lines = explode("\n", $content);
+        $result = [];
+        $prevLine = null;
+        $repeatCount = 0;
+        
+        foreach ($lines as $line) {
+            // Truncate long lines
+            if ($this->maxLineLength > 0 && mb_strlen($line) > $this->maxLineLength) {
+                $originalLength = mb_strlen($line);
+                $line = mb_substr($line, 0, $this->maxLineLength) . "... ($originalLength chars, truncated)";
+            }
+            
+            if ($line === $prevLine) {
+                $repeatCount++;
+                continue;
+            }
+            
+            // Flush previous repeated line
+            if ($repeatCount > 0) {
+                $result[] = "... (repeated $repeatCount more " . ($repeatCount === 1 ? 'time' : 'times') . ')';
+            }
+            
+            $result[] = $line;
+            $prevLine = $line;
+            $repeatCount = 0;
+        }
+        
+        // Flush final repeated line
+        if ($repeatCount > 0) {
+            $result[] = "... (repeated $repeatCount more " . ($repeatCount === 1 ? 'time' : 'times') . ')';
+        }
+        
+        return implode("\n", $result);
     }
     
 }

@@ -194,6 +194,7 @@ proj2file run --no-redact
 | Bearer tokens | `Bearer eyJ...` and similar |
 | URL credentials | `scheme://user:password@host` (credentials masked) |
 | Connection strings | `password=...` / `pwd=...` parameters |
+| PHP array credentials | `$DB['PASSWORD'] = '...'` and similar PHP config assignments |
 | Email addresses | `user@example.com` |
 | IPv4 addresses | Non-loopback, non-broadcast IPs |
 | JWT tokens | `eyJ...` three-segment tokens |
@@ -260,6 +261,25 @@ This dramatically reduces noise and token count for config-heavy directories. Co
 | `.bat`, `.cmd` | `REM`, `::` |
 | `.xml`, `.html` | `<!--` |
 
+### Deduplication
+
+Deduplicate consecutive repeated lines and truncate long lines with `--dedup` (or `-d`):
+
+```shell
+# Default: truncate lines longer than 500 characters
+proj2file run --dedup
+
+# Custom max line length (e.g., 300 characters)
+proj2file run --dedup 300
+```
+
+This is especially useful for log files with repetitive entries (e.g., PostgreSQL duplicate key errors) or lines containing huge SQL statements. Consecutive identical lines are collapsed into a single occurrence with a repeat count:
+
+```
+ERROR: duplicate key value violates unique constraint... (500 chars, truncated)
+... (repeated 47 more times)
+```
+
 ### Gzip support
 
 Gzipped files (`.gz`) are transparently decompressed before packing. This is especially useful for rotated log files:
@@ -286,7 +306,8 @@ proj2file run /etc/zabbix \
   --exec "df -h" \
   --exec "free -h" \
   --exec "ps aux | grep -E 'postgres|zabbix'" \
-  --tail 500
+  --tail 500 \
+  --dedup
 ```
 
 This produces a single redacted markdown file you can safely paste into any LLM chat — no agent required on the production machine.

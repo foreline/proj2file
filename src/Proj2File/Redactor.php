@@ -77,6 +77,10 @@ class Redactor
         $this->patterns['jwt'] =
             '/\beyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_.+\/=]+\b/';
         
+        // PHP-style array credential assignments: $VAR['PASSWORD'] = 'value';
+        $this->patterns['php_array_secret'] =
+            '/(\$\w+\[\s*[\'"](?:PASSWORD|PASSWD|SECRET|TOKEN|API_KEY|APIKEY|ACCESS_KEY|PRIVATE_KEY|AUTH|CREDENTIAL|DB_PASS)[\'"]]\s*=\s*[\'"])([^\'"]{1,200})([\'"])/i';
+        
         // Generic high-entropy hex secrets (32+ hex chars, likely a key/hash)
         $this->patterns['hex_secret'] =
             '/(?<=[=:"\'\s])[0-9a-f]{32,}\b/i';
@@ -131,7 +135,16 @@ class Redactor
                 continue;
             }
             
-            $result = preg_replace_callback($pattern, function () use ($name): string {
+            // PHP array secret: keep $VAR['KEY'] = ' prefix and trailing quote, redact only the value
+            if ($name === 'php_array_secret') {
+                $content = preg_replace_callback($pattern, function (array $matches): string {
+                    $this->redactionCount++;
+                    return $matches[1] . self::PLACEHOLDER . $matches[3];
+                }, $content) ?? $content;
+                continue;
+            }
+            
+            $result = preg_replace_callback($pattern, function (): string {
                 $this->redactionCount++;
                 return self::PLACEHOLDER;
             }, $content);

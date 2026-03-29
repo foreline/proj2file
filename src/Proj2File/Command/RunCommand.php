@@ -48,6 +48,7 @@ class RunCommand extends Command
             ->addOption('include', 'i', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Additional file or directory path(s) to include')
             ->addOption('tail', 't', InputOption::VALUE_REQUIRED, 'Only include the last N lines of each file and command output', '0')
             ->addOption('strip-comments', 's', null, 'Remove comment lines and blank lines from file contents')
+            ->addOption('dedup', 'd', InputOption::VALUE_OPTIONAL, 'Deduplicate repeated lines and truncate long lines (optional max line length, default 500)', false)
         ;
     }
     
@@ -74,6 +75,13 @@ class RunCommand extends Command
             $this->projectPacker->setCommands($input->getOption('exec'));
             $this->projectPacker->setExtraPaths($input->getOption('include'));
             $this->projectPacker->setStripComments((bool)$input->getOption('strip-comments'));
+            
+            $dedupOption = $input->getOption('dedup');
+            if ($dedupOption !== false) {
+                // --dedup without value gives null, --dedup=N gives the string value
+                $maxLineLength = ($dedupOption === null) ? 500 : (int)$dedupOption;
+                $this->projectPacker->setDedup(true, $maxLineLength);
+            }
             
             $this->projectPacker->setPath($path);
             $outputFile = $this->projectPacker->pack();
