@@ -24,6 +24,7 @@ class ProjectPacker
     private string $path;
     private bool $includeLineNumbers = false;
     private string $numberFormat = '4d';
+    private ?Redactor $redactor;
     
     /** @var array<string, string[]>  */
     private array $exclusions = [
@@ -41,6 +42,7 @@ class ProjectPacker
     public function __construct(/*string $path = ''*/)
     {
         //$this->setPath($path);
+        $this->redactor = new Redactor();
         $this->loadExclusions();
     }
     
@@ -174,6 +176,22 @@ YAML
     }
     
     /**
+     * @param bool $enabled
+     */
+    public function setRedact(bool $enabled): void
+    {
+        $this->redactor = $enabled ? new Redactor() : null;
+    }
+    
+    /**
+     * Returns the Redactor instance, if active.
+     */
+    public function getRedactor(): ?Redactor
+    {
+        return $this->redactor;
+    }
+    
+    /**
      * @return string
      */
     public function pack(): string
@@ -245,6 +263,7 @@ YAML
         $filesCount = 0;
         
         // Build a proper tree structure
+        /** @var array<string, mixed> $tree */
         $tree = [];
         
         foreach ( $finder as $file ) {
@@ -349,13 +368,18 @@ YAML
     {
         Assert::string($content);
         
+        // Redact sensitive data if enabled
+        if ($this->redactor !== null) {
+            $content = $this->redactor->redact($content);
+        }
+        
         // Escape existing triple backticks
         $escapedContent = str_replace('```', '\`\`\`', $content);
         
         if ( array_key_exists('extension', $pathInfo = pathinfo($path)) ) {
             $extension = $pathInfo['extension'];
         } else {
-            $extension = '';
+            $extension = $this->detectLanguageFromShebang($content);
         }
     
         // Split content into lines
@@ -471,6 +495,47 @@ EOT;
     public function getTokensCount(): int
     {
         return $this->tokensCount;
+    }
+    
+    /**
+     * Detects the programming language from a shebang line.
+     *
+     * @param string $content File content
+     * @return string Language identifier or empty string
+     */
+    private function detectLanguageFromShebang(string $content): string
+    {
+        $firstLine = strtok($content, "\n");
+        
+        if ($firstLine === false || !str_starts_with($firstLine, '#!')) {
+            return '';
+        }
+        
+        $shebangMap = [
+            'php'    => 'php',
+            'python' => 'python',
+            'python3'=> 'python',
+            'ruby'   => 'ruby',
+            'node'   => 'javascript',
+            'nodejs'  => 'javascript',
+            'deno'   => 'typescript',
+            'perl'   => 'perl',
+            'bash'   => 'bash',
+            'zsh'    => 'zsh',
+            'fish'   => 'fish',
+            'sh'     => 'sh',
+            'lua'    => 'lua',
+            'Rscript'=> 'r',
+            'pwsh'   => 'powershell',
+        ];
+        
+        foreach ($shebangMap as $keyword => $language) {
+            if (str_contains($firstLine, $keyword)) {
+                return $language;
+            }
+        }
+        
+        return '';
     }
     
 }

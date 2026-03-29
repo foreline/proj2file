@@ -47,6 +47,7 @@ class RunCommand extends Command
             )
             ->addOption('line-numbers', 'l', null, 'Include line numbers in file contents')
             ->addOption('number-format', 'f', InputOption::VALUE_OPTIONAL, 'Format for line numbers (e.g., "4d", "03d", "left:4")', '4d')
+            ->addOption('no-redact', null, null, 'Disable automatic redaction of secrets and private data')
         ;
     }
     
@@ -68,6 +69,7 @@ class RunCommand extends Command
             
             $this->projectPacker->setIncludeLineNumbers((bool)$input->getOption('line-numbers'));
             $this->projectPacker->setNumberFormat((string)$input->getOption('number-format'));
+            $this->projectPacker->setRedact(!$input->getOption('no-redact'));
             
             $this->projectPacker->setPath($path);
             $outputFile = $this->projectPacker->pack();
@@ -77,6 +79,11 @@ class RunCommand extends Command
             Response::info("Lines in file: {$this->projectPacker->getLinesCount()}");
             Response::info("File size: " . ( number_format($this->projectPacker->getSize()/1024 , 1) ) . " Kb");
             Response::info("Tokens count: " . $this->projectPacker->getTokensCount() . " tokens");
+            
+            $redactor = $this->projectPacker->getRedactor();
+            if ($redactor !== null) {
+                Response::info("Redactions applied: " . $redactor->getRedactionCount());
+            }
             
             return Command::SUCCESS;
             
