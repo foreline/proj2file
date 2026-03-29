@@ -242,6 +242,32 @@ proj2file run --tail 200
 
 Truncated files show a notice like `... (1800 lines truncated, showing last 200 lines)`.
 
+### Strip comments
+
+Remove comment lines and blank lines from packed files with `--strip-comments` (or `-s`):
+
+```shell
+proj2file run --strip-comments
+```
+
+This dramatically reduces noise and token count for config-heavy directories. Comment syntax is detected automatically by file extension:
+
+| Extensions | Comment prefixes removed |
+|---|---|
+| `.conf`, `.cfg`, `.ini`, `.sh`, `.yml`, `.yaml`, `.py`, `.rb`, `.env` | `#` |
+| `.php`, `.js`, `.ts`, `.c`, `.go`, `.rs`, `.java`, `.css` | `//`, `/*`, `*/`, `*` (docblocks) |
+| `.sql`, `.lua` | `--` |
+| `.bat`, `.cmd` | `REM`, `::` |
+| `.xml`, `.html` | `<!--` |
+
+### Gzip support
+
+Gzipped files (`.gz`) are transparently decompressed before packing. This is especially useful for rotated log files:
+
+```shell
+proj2file run --include /var/log/postgresql/postgresql-14-main.log.2.gz --tail 300
+```
+
 ### Sysadmin / troubleshooting example
 
 Gather artifacts from a Zabbix server with PostgreSQL issues, then feed the packed file to an LLM:

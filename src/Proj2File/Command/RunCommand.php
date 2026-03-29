@@ -47,6 +47,7 @@ class RunCommand extends Command
             ->addOption('exec', 'x', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Shell command(s) to execute and include output in the pack')
             ->addOption('include', 'i', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Additional file or directory path(s) to include')
             ->addOption('tail', 't', InputOption::VALUE_REQUIRED, 'Only include the last N lines of each file and command output', '0')
+            ->addOption('strip-comments', 's', null, 'Remove comment lines and blank lines from file contents')
         ;
     }
     
@@ -72,6 +73,7 @@ class RunCommand extends Command
             $this->projectPacker->setTailLines((int)$input->getOption('tail'));
             $this->projectPacker->setCommands($input->getOption('exec'));
             $this->projectPacker->setExtraPaths($input->getOption('include'));
+            $this->projectPacker->setStripComments((bool)$input->getOption('strip-comments'));
             
             $this->projectPacker->setPath($path);
             $outputFile = $this->projectPacker->pack();

@@ -26,6 +26,7 @@ class ProjectPacker
     private string $numberFormat = '4d';
     private ?Redactor $redactor;
     private int $tailLines = 0;
+    private bool $stripComments = false;
     
     /** @var string[] */
     private array $commands = [];
@@ -223,6 +224,14 @@ YAML
     }
     
     /**
+     * @param bool $enabled Whether to strip comment lines and blank lines
+     */
+    public function setStripComments(bool $enabled): void
+    {
+        $this->stripComments = $enabled;
+    }
+    
+    /**
      * @return string
      */
     public function pack(): string
@@ -239,7 +248,7 @@ YAML
         
         foreach ( $finder as $file) {
             $relativePath = substr($file->getPathname(), strlen($this->getPath()) + 1);
-            $content[] = $this->formatFileEntry($relativePath, $file->getContents());
+            $content[] = $this->formatFileEntry($relativePath, $this->readFileContent($file->getPathname()));
         }
         
         // Pack extra paths (files or directories from other locations)
@@ -247,8 +256,8 @@ YAML
             $resolved = Path::canonicalize($extraPath);
             
             if (is_file($resolved)) {
-                $fileContent = file_get_contents($resolved);
-                if ($fileContent !== false) {
+                $fileContent = $this->readFileContent($resolved);
+                if ($fileContent !== '') {
                     $content[] = $this->formatFileEntry($resolved, $fileContent);
                 }
             } elseif (is_dir($resolved)) {
@@ -260,7 +269,7 @@ YAML
                 
                 foreach ($extraFinder as $file) {
                     $displayPath = $resolved . '/' . substr($file->getPathname(), strlen($resolved) + 1);
-                    $content[] = $this->formatFileEntry($displayPath, $file->getContents());
+                    $content[] = $this->formatFileEntry($displayPath, $this->readFileContent($file->getPathname()));
                 }
             } else {
                 Response::warn("Extra path not found: $resolved");
@@ -373,15 +382,15 @@ YAML
                     //$isLastDir = $lastDir;
                     
                     if ( $isRoot ) {
-                        $prefix = $isLast ? '└── ' : '├── ';
+                        $prefix = $isLast ? '+-- ' : '+-- ';
                         $output .= $prefix . $dir . PHP_EOL;
-                        $connector = $isLast ? '    ' : '│   ';
+                        $connector = $isLast ? '    ' : '|   ';
                         $printTree($tree['dirs'][$dir], $connector, false);
                     } else {
-                        $connector = $isLast ? '└── ' : '├── ';
+                        $connector = $isLast ? '+-- ' : '+-- ';
                         $output .= $prefix . $connector . $dir . PHP_EOL;
                         
-                        $newPrefix = $prefix . ($isLast ? '    ' : '│   ');
+                        $newPrefix = $prefix . ($isLast ? '    ' : '|   ');
                         $printTree($tree['dirs'][$dir], $newPrefix, false);
                     }
                 }
@@ -400,10 +409,10 @@ YAML
                     $isLastFile = $lastFile;
                     
                     if ( $isRoot ) {
-                        $prefix = $isLastFile ? '└── ' : '├── ';
+                        $prefix = $isLastFile ? '+-- ' : '+-- ';
                         $output .= $prefix . $file . PHP_EOL;
                     } else {
-                        $connector = $lastFile ? '└── ' : '├── ';
+                        $connector = $lastFile ? '+-- ' : '+-- ';
                         $output .= $prefix . $connector . $file . PHP_EOL;
                     }
                 }
@@ -432,6 +441,11 @@ YAML
         // Redact sensitive data if enabled
         if ($this->redactor !== null) {
             $content = $this->redactor->redact($content);
+        }
+        
+        // Strip comments and blank lines if enabled
+        if ($this->stripComments) {
+            $content = $this->removeComments($content, $path);
         }
         
         // Escape existing triple backticks
@@ -653,6 +667,82 @@ EOT;
         }
         
         return '';
+    }
+    
+    /**
+     * Reads file content, transparently decompressing gzip files.
+     *
+     * @param string $filePath Absolute path to the file
+     * @return string File content (empty string on failure)
+     */
+    private function readFileContent(string $filePath): string
+    {
+        if (str_ends_with($filePath, '.gz')) {
+            $compressed = file_get_contents($filePath);
+            if ($compressed === false) {
+                Response::warn("Failed to read: $filePath");
+                return '';
+            }
+            $decompressed = @gzdecode($compressed);
+            if ($decompressed === false) {
+                Response::warn("Failed to decompress: $filePath");
+                return '';
+            }
+            return $decompressed;
+        }
+        
+        $content = file_get_contents($filePath);
+        return $content !== false ? $content : '';
+    }
+    
+    /**
+     * Removes comment lines and blank lines from content based on file type.
+     *
+     * @param string $content File content
+     * @param string $path    File path (used to detect comment style)
+     * @return string Content with comments and blank lines removed
+     */
+    private function removeComments(string $content, string $path): string
+    {
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        
+        // Map file extensions to comment prefixes
+        $commentPrefixes = match (true) {
+            in_array($ext, ['conf', 'cfg', 'ini', 'sh', 'bash', 'zsh', 'yml', 'yaml', 'py', 'rb', 'pl', 'r', 'toml', 'env', '']) => ['#'],
+            in_array($ext, ['php', 'js', 'ts', 'c', 'cpp', 'h', 'java', 'go', 'rs', 'swift', 'kt', 'cs', 'css', 'scss', 'less']) => ['//', '/*', '*/', '*'],
+            in_array($ext, ['sql', 'lua']) => ['--'],
+            in_array($ext, ['bat', 'cmd']) => ['REM', '::'],
+            in_array($ext, ['xml', 'html', 'svg']) => ['<!--'],
+            in_array($ext, ['vim']) => ['"'],
+            default => ['#', '//'],
+        };
+        
+        $lines = explode("\n", $content);
+        $filtered = [];
+        
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            
+            // Skip blank lines
+            if ($trimmed === '') {
+                continue;
+            }
+            
+            // Skip comment lines
+            $isComment = false;
+            foreach ($commentPrefixes as $prefix) {
+                if (str_starts_with($trimmed, $prefix)) {
+                    $isComment = true;
+                    break;
+                }
+            }
+            
+            if (!$isComment) {
+                $filtered[] = $line;
+            }
+        }
+        
+        return implode("\n", $filtered);
     }
     
 }
