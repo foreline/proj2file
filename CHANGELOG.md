@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--exec` / `-x` option to capture and include shell command output in packed files
+- `--include` / `-i` option to include files or directories from other locations
+- `--tail` / `-t` option to limit file and command output to last N lines with truncation notices
+- Sysadmin/troubleshooting example in documentation for gathering system state snapshots
+
 ## [0.2.0] - 2026-03-29
 
 ### Added
