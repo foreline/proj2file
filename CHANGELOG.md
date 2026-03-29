@@ -7,22 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-29
+
 ### Added
 - PHPUnit 10 test suite with 19 comprehensive tests covering RunCommand, Redactor, and TokenCounter
 - `phpunit.xml` configuration file
-- `--exec` / `-x` option to capture and include shell command output in packed files
-- `--include` / `-i` option to include files or directories from other locations
-- `--tail` / `-t` option to limit file and command output to last N lines with truncation notices
-- Sysadmin/troubleshooting example in documentation for gathering system state snapshots
-- Clear Linux system-wide installation instructions with symlink setup
-
-### Changed
-- Updated PHP minimum requirement from 8.0 to 8.1 (for Symfony 6.4 compatibility)
-- Reorganized installation documentation with separate sections for different installation methods
 
 ### Fixed
 - Fatal type error when running `--help` due to `$defaultName` property conflict with parent class; migrated to `#[AsCommand]` attribute (Symfony 6.1+ recommended approach)
-- Lowered Symfony package versions to Symfony 6.4 for PHP 8.1 support (7.0+ requires 8.2)
 
 ## [0.2.0] - 2026-03-29
 
