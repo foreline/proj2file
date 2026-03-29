@@ -48,6 +48,9 @@ class RunCommand extends Command
             ->addOption('line-numbers', 'l', null, 'Include line numbers in file contents')
             ->addOption('number-format', 'f', InputOption::VALUE_OPTIONAL, 'Format for line numbers (e.g., "4d", "03d", "left:4")', '4d')
             ->addOption('no-redact', null, null, 'Disable automatic redaction of secrets and private data')
+            ->addOption('exec', 'x', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Shell command(s) to execute and include output in the pack')
+            ->addOption('include', 'i', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Additional file or directory path(s) to include')
+            ->addOption('tail', 't', InputOption::VALUE_REQUIRED, 'Only include the last N lines of each file and command output', '0')
         ;
     }
     
@@ -70,6 +73,9 @@ class RunCommand extends Command
             $this->projectPacker->setIncludeLineNumbers((bool)$input->getOption('line-numbers'));
             $this->projectPacker->setNumberFormat((string)$input->getOption('number-format'));
             $this->projectPacker->setRedact(!$input->getOption('no-redact'));
+            $this->projectPacker->setTailLines((int)$input->getOption('tail'));
+            $this->projectPacker->setCommands($input->getOption('exec'));
+            $this->projectPacker->setExtraPaths($input->getOption('include'));
             
             $this->projectPacker->setPath($path);
             $outputFile = $this->projectPacker->pack();

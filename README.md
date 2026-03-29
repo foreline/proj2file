@@ -179,3 +179,56 @@ proj2file run -l
 proj2file run ./path/to/dir --no-redact
 ```
 
+### Extra paths
+
+Include files or directories from other locations with `--include` (or `-i`):
+
+```shell
+proj2file run --include /etc/nginx/nginx.conf --include /etc/php/8.2/fpm/pool.d
+```
+
+Multiple `--include` flags can be used. Each can point to a single file or an entire directory.
+
+### Command output capture
+
+Capture the output of shell commands with `--exec` (or `-x`):
+
+```shell
+proj2file run --exec "systemctl status nginx" --exec "df -h" --exec "free -h"
+```
+
+Each command runs via the system shell.  Output is included at the end of the packed file. Non-zero exit codes are shown in the header. Redaction applies to command output too.
+
+### Log truncation
+
+Limit each file and command output to the last N lines with `--tail` (or `-t`):
+
+```shell
+proj2file run --tail 200
+```
+
+Truncated files show a notice like `... (1800 lines truncated, showing last 200 lines)`.
+
+### Sysadmin / troubleshooting example
+
+Gather artifacts from a Zabbix server with PostgreSQL issues, then feed the packed file to an LLM:
+
+```shell
+proj2file run /etc/zabbix \
+  --include /etc/postgresql \
+  --include /var/log/zabbix/zabbix_server.log \
+  --include /var/log/postgresql \
+  --exec "systemctl status postgresql" \
+  --exec "systemctl status zabbix-server" \
+  --exec "pg_lscluster" \
+  --exec "pg_isready" \
+  --exec "journalctl -u postgresql --since '24 hours ago' --no-pager" \
+  --exec "journalctl -u zabbix-server --since '24 hours ago' --no-pager" \
+  --exec "df -h" \
+  --exec "free -h" \
+  --exec "ps aux | grep -E 'postgres|zabbix'" \
+  --tail 500
+```
+
+This produces a single redacted markdown file you can safely paste into any LLM chat — no agent required on the production machine.
+

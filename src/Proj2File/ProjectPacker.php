@@ -25,6 +25,13 @@ class ProjectPacker
     private bool $includeLineNumbers = false;
     private string $numberFormat = '4d';
     private ?Redactor $redactor;
+    private int $tailLines = 0;
+    
+    /** @var string[] */
+    private array $commands = [];
+    
+    /** @var string[] */
+    private array $extraPaths = [];
     
     /** @var array<string, string[]>  */
     private array $exclusions = [
@@ -192,6 +199,30 @@ YAML
     }
     
     /**
+     * @param int $lines Number of lines to keep from the end of each file (0 = no limit)
+     */
+    public function setTailLines(int $lines): void
+    {
+        $this->tailLines = $lines;
+    }
+    
+    /**
+     * @param string[] $commands Shell commands whose output will be captured
+     */
+    public function setCommands(array $commands): void
+    {
+        $this->commands = $commands;
+    }
+    
+    /**
+     * @param string[] $paths Additional directory/file paths to include
+     */
+    public function setExtraPaths(array $paths): void
+    {
+        $this->extraPaths = $paths;
+    }
+    
+    /**
      * @return string
      */
     public function pack(): string
@@ -209,6 +240,36 @@ YAML
         foreach ( $finder as $file) {
             $relativePath = substr($file->getPathname(), strlen($this->getPath()) + 1);
             $content[] = $this->formatFileEntry($relativePath, $file->getContents());
+        }
+        
+        // Pack extra paths (files or directories from other locations)
+        foreach ($this->extraPaths as $extraPath) {
+            $resolved = Path::canonicalize($extraPath);
+            
+            if (is_file($resolved)) {
+                $fileContent = file_get_contents($resolved);
+                if ($fileContent !== false) {
+                    $content[] = $this->formatFileEntry($resolved, $fileContent);
+                }
+            } elseif (is_dir($resolved)) {
+                $extraFinder = Finder::create()
+                    ->in($resolved)
+                    ->files()
+                    ->ignoreVCS(true)
+                    ->ignoreDotFiles(false);
+                
+                foreach ($extraFinder as $file) {
+                    $displayPath = $resolved . '/' . substr($file->getPathname(), strlen($resolved) + 1);
+                    $content[] = $this->formatFileEntry($displayPath, $file->getContents());
+                }
+            } else {
+                Response::warn("Extra path not found: $resolved");
+            }
+        }
+        
+        // Capture command output
+        foreach ($this->commands as $command) {
+            $content[] = $this->captureCommand($command);
         }
         
         return $this->writeOutputFile($content);
@@ -384,6 +445,15 @@ YAML
     
         // Split content into lines
         $lines = explode("\n", $escapedContent);
+        
+        // Apply tail truncation if configured
+        $truncated = false;
+        if ($this->tailLines > 0 && count($lines) > $this->tailLines) {
+            $totalLines = count($lines);
+            $lines = array_slice($lines, -$this->tailLines);
+            $truncated = true;
+            $skipped = $totalLines - $this->tailLines;
+        }
     
         // Format with line numbers if requested
         if ( $this->isIncludeLineNumbers() ) {
@@ -399,10 +469,15 @@ YAML
             $contentBlock = implode("\n", $lines);
         }
         
+        $truncationNotice = '';
+        if ($truncated) {
+            $truncationNotice = "... ($skipped lines truncated, showing last $this->tailLines lines)" . "\n";
+        }
+        
         return <<<EOT
 $path
 ```$extension
-$contentBlock
+$truncationNotice$contentBlock
 ```
 
 EOT;
@@ -495,6 +570,48 @@ EOT;
     public function getTokensCount(): int
     {
         return $this->tokensCount;
+    }
+    
+    /**
+     * Executes a shell command and formats its output as a markdown entry.
+     *
+     * @param string $command Shell command to execute
+     * @return string Formatted markdown block
+     */
+    private function captureCommand(string $command): string
+    {
+        Response::info("Executing: $command");
+        
+        $output = [];
+        $exitCode = 0;
+        exec($command . ' 2>&1', $output, $exitCode);
+        
+        $result = implode("\n", $output);
+        
+        // Redact if enabled
+        if ($this->redactor !== null) {
+            $result = $this->redactor->redact($result);
+        }
+        
+        // Apply tail truncation
+        if ($this->tailLines > 0) {
+            $lines = explode("\n", $result);
+            if (count($lines) > $this->tailLines) {
+                $skipped = count($lines) - $this->tailLines;
+                $lines = array_slice($lines, -$this->tailLines);
+                $result = "... ($skipped lines truncated, showing last $this->tailLines lines)\n" . implode("\n", $lines);
+            }
+        }
+        
+        $exitInfo = $exitCode !== 0 ? " (exit code: $exitCode)" : '';
+        
+        return <<<EOT
+Command: `$command`$exitInfo
+```
+$result
+```
+
+EOT;
     }
     
     /**
