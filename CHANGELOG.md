@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--dedup` / `-d` CLI option to deduplicate consecutive repeated lines and truncate long lines (useful for log files with repetitive entries); optional parameter sets max line length (default 500 characters)
+- Enhanced redaction to detect and mask PHP array credential assignments (e.g., `$DB['PASSWORD'] = '...'`)
+
 ## [0.4.0] - 2026-03-29
 
 ### Added
