@@ -785,7 +785,7 @@ EOT;
     {
         $lines = explode("\n", $content);
         $result = [];
-        $prevLine = null;
+        $prevNormalized = null;
         $repeatCount = 0;
         
         foreach ($lines as $line) {
@@ -795,7 +795,9 @@ EOT;
                 $line = mb_substr($line, 0, $this->maxLineLength) . "... ($originalLength chars, truncated)";
             }
             
-            if ($line === $prevLine) {
+            $normalized = $this->normalizeLine($line);
+            
+            if ($normalized === $prevNormalized) {
                 $repeatCount++;
                 continue;
             }
@@ -806,7 +808,7 @@ EOT;
             }
             
             $result[] = $line;
-            $prevLine = $line;
+            $prevNormalized = $normalized;
             $repeatCount = 0;
         }
         
@@ -816,6 +818,23 @@ EOT;
         }
         
         return implode("\n", $result);
+    }
+    
+    /**
+     * Normalize a line for dedup comparison by replacing timestamps and PIDs with placeholders.
+     */
+    private function normalizeLine(string $line): string
+    {
+        // ISO-style timestamps: 2026-03-26 03:11:50.465, 2026-03-26T03:11:50
+        $n = preg_replace('/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?/', '<TS>', $line);
+        
+        // Syslog-style timestamps: Mar 26 03:11:50
+        $n = preg_replace('/[A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}/', '<TS>', (string)$n);
+        
+        // Bracketed PIDs/TIDs: [1447], [12345]
+        $n = preg_replace('/\[\d+\]/', '[*]', (string)$n);
+        
+        return (string)$n;
     }
     
 }
