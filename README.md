@@ -39,33 +39,66 @@ The tool is not intended to replace:
 
 ### Requirements
 
-* PHP 8.0+
+* PHP 8.1+
 * Composer
 
-### Global install (Windows/macOS/Linux)
+### Global install (via Composer)
+
+If the package is published on Packagist, install globally with:
 
 ```shell
 composer global require foreline/proj2file
 ```
 
-Make sure Composer global bin is in your `PATH`:
+Then add Composer's bin directory to your `PATH`. Edit `~/.bashrc` or `~/.zshrc`:
 
-* Windows: `%APPDATA%\Composer\vendor\bin`
-* macOS/Linux: `$HOME/.composer/vendor/bin` or `$HOME/.config/composer/vendor/bin`
+```bash
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+```
 
-Verify global install:
+Reload your shell:
+
+```bash
+source ~/.bashrc  # or ~/.zshrc
+```
+
+Verify installation:
 
 ```shell
 proj2file --help
 ```
 
-Use globally from any project directory:
+### Linux system-wide installation (from source)
+
+To make `proj2file` accessible globally without Composer, clone and symlink:
 
 ```shell
-proj2file run
+# Clone the repository
+git clone https://github.com/foreline/proj2file.git /opt/proj2file
+
+# Create a symlink in /usr/local/bin
+sudo ln -s /opt/proj2file/bin/proj2file /usr/local/bin/proj2file
+
+# Make the script executable
+chmod +x /opt/proj2file/bin/proj2file
 ```
 
-### Install this project (from source)
+Install dependencies:
+
+```shell
+cd /opt/proj2file
+composer install --no-dev
+```
+
+Verify installation:
+
+```shell
+proj2file --help
+```
+
+Now `proj2file` is available globally from any directory.
+
+### Install from source (local project)
 
 ```shell
 git clone https://github.com/foreline/proj2file.git
