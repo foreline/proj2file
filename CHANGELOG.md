@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Improved `--dedup` feature to normalize timestamps and PIDs before comparison, allowing correct deduplication of log entries that differ only in timestamps or process IDs
+
 ## [0.5.0] - 2026-03-29
 
 ### Added
