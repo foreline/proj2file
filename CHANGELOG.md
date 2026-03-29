@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sysadmin/troubleshooting example in documentation for gathering system state snapshots
 
 ### Fixed
-- Lowered Symfony package versions to support PHP 8.1 (was requiring 8.2 with 7.3.x-dev)
+- Lowered Symfony package versions to Symfony 6.4 for PHP 8.1 support (7.0+ requires 8.2)
 
 ## [0.2.0] - 2026-03-29
 
