@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Restructured documentation: extracted README content into modular docs/ files (installation.md, usage.md, redaction.md, examples.md) for improved maintainability and navigation
 - Replaced `kevinlebrun/colors.php` and `webmozart/assert` dependencies with native ANSI code implementation for terminal output styling, reducing external dependencies
 
 ### Fixed
