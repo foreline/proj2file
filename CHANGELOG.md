@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--tail` / `-t` option to limit file and command output to last N lines with truncation notices
 - Sysadmin/troubleshooting example in documentation for gathering system state snapshots
 
+### Fixed
+- Lowered Symfony package versions to support PHP 8.1 (was requiring 8.2 with 7.3.x-dev)
+
 ## [0.2.0] - 2026-03-29
 
 ### Added
