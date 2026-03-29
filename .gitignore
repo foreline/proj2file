@@ -3,3 +3,4 @@ vendor
 .proj2file
 .uml
 .codemetrics
+composer.lock
