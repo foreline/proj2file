@@ -7,18 +7,16 @@ namespace Foreline\Proj2File\Command;
 use Exception;
 use Foreline\IO\Response;
 use Foreline\Proj2File\ProjectPacker;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- *
- */
+#[AsCommand(name: 'run', description: 'Pack project files into a single file')]
 class RunCommand extends Command
 {
-    protected static string $defaultName = 'run';
     
     private ProjectPacker $projectPacker;
     
@@ -37,8 +35,6 @@ class RunCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName(self::$defaultName)
-            ->setDescription('Pack project files into a single file')
             ->setHelp('This command packs all project files (excluding .gitignore file rules) into a single file in .proj2file directory.')
             ->addArgument(
                 'path',

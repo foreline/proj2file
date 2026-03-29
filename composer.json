@@ -22,11 +22,17 @@
   },
   "require-dev": {
     "symfony/var-dumper": "^6.4",
-    "phpstan/phpstan": "^1.10"
+    "phpstan/phpstan": "^1.10",
+    "phpunit/phpunit": "10"
   },
   "autoload": {
     "psr-4": {
       "Foreline\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Foreline\\Tests\\": "tests/"
     }
   },
   "bin": [
