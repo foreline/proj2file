@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced `kevinlebrun/colors.php` and `webmozart/assert` dependencies with native ANSI code implementation for terminal output styling, reducing external dependencies
 
 ### Fixed
+- Resolved GitLab CI/CD pipeline Composer install failure by removing deprecated `--no-suggest` flag and configuring security advisory ignore list for phpunit/phpunit 10.0.0
 - Improved `--dedup` feature to normalize timestamps and PIDs before comparison, allowing correct deduplication of log entries that differ only in timestamps or process IDs
 
 ## [0.5.0] - 2026-03-29
@@ -34,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `phpunit.xml` configuration file
 
 ### Fixed
-- Fatal type error when running `--help` due to `$defaultName` property conflict with parent class; migrated to `#[AsCommand]` attribute (Symfony 6.1+ recommended approach)
+- Fatal type error when running `--help` due to ` property conflict with parent class; migrated to `#[AsCommand]` attribute (Symfony 6.1+ recommended approach)
 
 ## [0.2.0] - 2026-03-29
 
@@ -47,5 +48,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detailed documentation of redaction patterns and usage scenarios
 
 ## [0.1.05]
-
-Historical releases are documented via git tags.
